@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Notebook — Soil-Based Crop Advisor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root{
+    --umber: #241c14;
+    --umber-soft: #3d3122;
+    --topsoil: #6b4a2f;
+    --subsoil: #8f6b3f;
+    --clay: #b98a4a;
+    --moss: #4c5d3a;
+    --moss-deep: #3a4a2b;
+    --straw: #e8c96a;
+    --paper: #f4ecdc;
+    --paper-dim: #e9ddc4;
+    --ink: #241c14;
+    --rust: #a13d24;
+    --line: #cdbb92;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Space Mono', monospace;
+    line-height:1.55;
+  }
+  h1,h2,h3{ font-family:'Fraunces', serif; margin:0; }
+
+  .hero{
+    background:var(--umber);
+    color:var(--paper);
+    position:relative;
+  }
+  .hero-top{
+    max-width:920px;
+    margin:0 auto;
+    padding:52px 28px 0;
+  }
+  .hero-top .eyebrow{
+    font-size:0.82rem;
+    color:var(--straw);
+    letter-spacing:0.02em;
+  }
+  .hero-top h1{
+    font-size:clamp(2rem, 5vw, 3.1rem);
+    font-weight:600;
+    max-width:16ch;
+    margin-top:14px;
+    line-height:1.08;
+  }
+  .hero-top p{
+    max-width:50ch;
+    color:#cbbfa2;
+    margin-top:18px;
+    font-size:0.98rem;
+  }
+
+  .soil-profile{
+    margin-top:40px;
+    width:100%;
+    display:block;
+  }
+  .horizon-label{
+    font-size:0.68rem;
+    fill:#e9ddc4;
+    letter-spacing:0.04em;
+  }
+
+  main{
+    max-width:920px;
+    margin:0 auto;
+    padding:0 28px 90px;
+  }
+
+  .sheet{
+    background:var(--paper);
+    border:1px solid var(--line);
+    margin-top:-1px;
+  }
+  .sheet-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-bottom:2px solid var(--umber);
+    padding:30px 0 16px;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .sheet-head h2{
+    font-size:1.5rem;
+    font-weight:600;
+  }
+  .sheet-head .tag{
+    font-size:0.72rem;
+    color:var(--moss-deep);
+    background:#dbe3cd;
+    padding:4px 10px;
+    border-radius:2px;
+  }
+
+  .field-log{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    border-left:1px solid var(--line);
+    border-top:1px solid var(--line);
+  }
+  @media(max-width:760px){ .field-log{ grid-template-columns:repeat(2, 1fr); } }
+  @media(max-width:420px){ .field-log{ grid-template-columns:1fr; } }
+
+  .field-cell{
+    border-right:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    padding:16px 18px;
+  }
+  .field-cell label{
+    display:flex;
+    justify-content:space-between;
+    font-size:0.72rem;
+    color:var(--topsoil);
+    margin-bottom:8px;
+  }
+  .field-cell label .unit{ color:#a89873; }
+  .field-cell input{
+    width:100%;
+    border:none;
+    background:transparent;
+    border-bottom:1px solid var(--line);
+    padding:4px 0 8px;
+    font-family:'Fraunces', serif;
+    font-size:1.3rem;
+    color:var(--ink);
+  }
+  .field-cell input:focus{
+    outline:none;
+    border-bottom-color:var(--rust);
+  }
+  .field-cell input::placeholder{ color:#c9bb98; font-family:'Space Mono', monospace; font-size:1rem; }
+
+  .season-strip{
+    display:flex;
+    border:1px solid var(--line);
+    border-top:none;
+  }
+  .season-strip button{
+    flex:1;
+    padding:14px 10px;
+    border:none;
+    border-right:1px solid var(--line);
+    background:var(--paper-dim);
+    font-family:'Space Mono', monospace;
+    font-size:0.8rem;
+    color:var(--umber-soft);
+    cursor:pointer;
+  }
+  .season-strip button:last-child{ border-right:none; }
+  .season-strip button.active{
+    background:var(--moss);
+    color:var(--paper);
+  }
+
+  .run-row{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:24px 0 8px;
+    flex-wrap:wrap;
+  }
+  .run-row button{
+    background:var(--rust);
+    color:var(--paper);
+    border:none;
+    padding:15px 30px;
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.02rem;
+    cursor:pointer;
+    letter-spacing:0.01em;
+  }
+  .run-row button:hover{ background:#8a3319; }
+  .err{
+    color:var(--rust);
+    font-size:0.8rem;
+    display:none;
+  }
+
+  #results{ display:none; margin-top:48px; }
+  #results > h2{
+    font-size:1.5rem;
+    font-weight:600;
+    border-bottom:2px solid var(--umber);
+    padding-bottom:16px;
+  }
+  #results > .sub{
+    font-size:0.8rem;
+    color:var(--topsoil);
+    margin:10px 0 26px;
+  }
+
+  .result-row{
+    display:grid;
+    grid-template-columns:56px 1fr 90px;
+    gap:18px;
+    align-items:center;
+    padding:18px 0;
+    border-bottom:1px solid var(--line);
+  }
+  @media(max-width:560px){
+    .result-row{ grid-template-columns:40px 1fr; }
+    .result-row .dur-col{ grid-column:2; padding-left:0; text-align:left; }
+  }
+  .result-row:first-child{ padding-top:4px; }
+
+  .rank-num{
+    font-family:'Fraunces', serif;
+    font-size:1.9rem;
+    color:var(--clay);
+  }
+  .result-main h3{
+    font-size:1.1rem;
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .fit-track{
+    height:5px;
+    background:var(--paper-dim);
+    position:relative;
+    margin-bottom:8px;
+  }
+  .fit-fill{
+    position:absolute; left:0; top:0; bottom:0;
+    background:var(--moss);
+  }
+  .result-main .meta{
+    font-size:0.78rem;
+    color:var(--topsoil);
+  }
+  .result-main .flags{
+    font-size:0.76rem;
+    color:var(--rust);
+    margin-top:4px;
+  }
+  .dur-col{
+    text-align:right;
+    font-size:0.78rem;
+    color:var(--umber-soft);
+    line-height:1.3;
+  }
+  .dur-col .big{
+    display:block;
+    font-family:'Fraunces', serif;
+    font-size:1.15rem;
+    color:var(--ink);
+  }
+
+  .foot-note{
+    font-size:0.76rem;
+    color:#8a7a58;
+    margin-top:30px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-top">
+    <div class="eyebrow">FIELD NOTEBOOK · SOIL TO SOWING</div>
+    <h1>What your soil test is actually telling you to plant.</h1>
+    <p>Enter the nutrient readings from your lab report below. They get checked against the ranges each crop actually needs, layer by layer, the way an agronomist would read a soil profile.</p>
+  </div>
+
+  <svg class="soil-profile" viewBox="0 0 920 150" preserveAspectRatio="none">
+    <rect x="0" y="0" width="920" height="38" fill="#4c5d3a"/>
+    <rect x="0" y="38" width="920" height="40" fill="#6b4a2f"/>
+    <rect x="0" y="78" width="920" height="40" fill="#8f6b3f"/>
+    <rect x="0" y="118" width="920" height="32" fill="#b98a4a"/>
+    <text x="28" y="23" class="horizon-label">TOPSOIL — organic matter, roots</text>
+    <text x="28" y="62" class="horizon-label">SUBSOIL — nutrient reserve</text>
+    <text x="28" y="102" class="horizon-label">WEATHERED PARENT MATERIAL</text>
+    <text x="28" y="139" class="horizon-label">BEDROCK</text>
+  </svg>
+</div>
+
+<main>
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2>Lab reading entry</h2>
+      <span class="tag">STEP 1 OF 2</span>
+    </div>
+
+    <div class="field-log">
+      <div class="field-cell">
+        <label>Nitrogen (N) <span class="unit">kg/ha</span></label>
+        <input type="number" id="n" placeholder="80" step="any">
+      </div>
+      <div class="field-cell">
+        <label>Phosphorus (P) <span class="unit">kg/ha</span></label>
+        <input type="number" id="p" placeholder="40" step="any">
+      </div>
+      <div class="field-cell">
+        <label>Potassium (K) <span class="unit">kg/ha</span></label>
+        <input type="number" id="k" placeholder="45" step="any">
+      </div>
+      <div class="field-cell">
+        <label>Soil pH</label>
+        <input type="number" id="ph" placeholder="6.5" step="any">
+      </div>
+      <div class="field-cell">
+        <label>Magnesium (Mg) <span class="unit">mg/kg</span></label>
+        <input type="number" id="mg" placeholder="60" step="any">
+      </div>
+      <div class="field-cell">
+        <label>Sulfate / Sulfur (S) <span class="unit">mg/kg</span></label>
+        <input type="number" id="s" placeholder="15" step="any">
+      </div>
+      <div class="field-cell">
+        <label>Rainfall <span class="unit">mm/yr</span></label>
+        <input type="number" id="rain" placeholder="900" step="any">
+      </div>
+      <div class="field-cell">
+        <label>Avg. temperature <span class="unit">°C</span></label>
+        <input type="number" id="temp" placeholder="26" step="any">
+      </div>
+    </div>
+
+    <div class="season-strip" id="seasonRow">
+      <button data-season="any" class="active">ANY SEASON</button>
+      <button data-season="kharif">KHARIF · MONSOON</button>
+      <button data-season="rabi">RABI · WINTER</button>
+      <button data-season="zaid">ZAID · SUMMER</button>
+    </div>
+
+    <div class="run-row">
+      <button id="calcBtn">Read the soil →</button>
+      <span class="err" id="errMsg">Fill in N, P, K and pH at minimum.</span>
+    </div>
+  </div>
+
+  <div id="results">
+    <h2>What fits this soil</h2>
+    <div class="sub">Ranked by how closely your readings sit inside each crop's ideal range.</div>
+    <div id="resultList"></div>
+    <div class="foot-note">This runs on typical agronomic reference ranges, not a trained model or your specific region's field data — use it as a starting shortlist, then confirm with your local agricultural extension office before you sow.</div>
+  </div>
+</main>
+
+<script>
+const CROPS = [
+  { name: "Rice", season:"kharif", duration:[3.5,5],
+    N:[80,120], P:[30,50], K:[30,50], pH:[5.5,7.0], Mg:[30,100], S:[10,30], rain:[1000,2000], temp:[21,32] },
+  { name: "Wheat", season:"rabi", duration:[4,5],
+    N:[100,140], P:[40,60], K:[30,50], pH:[6.0,7.5], Mg:[30,100], S:[10,25], rain:[400,800], temp:[10,25] },
+  { name: "Maize", season:"kharif", duration:[3,4],
+    N:[100,150], P:[50,70], K:[40,60], pH:[5.8,7.5], Mg:[30,90], S:[10,25], rain:[500,1000], temp:[18,27] },
+  { name: "Cotton", season:"kharif", duration:[5.5,7],
+    N:[80,120], P:[40,60], K:[40,60], pH:[6.0,8.0], Mg:[30,80], S:[10,25], rain:[600,1100], temp:[21,30] },
+  { name: "Sugarcane", season:"any", duration:[10,12],
+    N:[150,220], P:[60,90], K:[100,150], pH:[6.0,7.5], Mg:[30,100], S:[15,30], rain:[1100,1500], temp:[21,32] },
+  { name: "Soybean", season:"kharif", duration:[3.5,4.5],
+    N:[20,40], P:[40,60], K:[40,60], pH:[6.0,7.0], Mg:[30,90], S:[10,25], rain:[600,1000], temp:[20,30] },
+  { name: "Groundnut", season:"kharif", duration:[3.5,4.5],
+    N:[15,30], P:[40,60], K:[40,60], pH:[6.0,7.0], Mg:[40,100], S:[15,30], rain:[500,900], temp:[22,30] },
+  { name: "Chickpea (gram)", season:"rabi", duration:[3,4],
+    N:[15,25], P:[40,60], K:[20,40], pH:[6.0,7.5], Mg:[20,70], S:[8,20], rain:[400,700], temp:[15,25] },
+  { name: "Mustard", season:"rabi", duration:[3,4],
+    N:[60,90], P:[30,50], K:[20,40], pH:[6.0,7.5], Mg:[20,70], S:[15,35], rain:[300,600], temp:[10,22] },
+  { name: "Potato", season:"rabi", duration:[3,3.5],
+    N:[100,150], P:[60,90], K:[100,150], pH:[5.0,6.5], Mg:[30,90], S:[10,25], rain:[500,800], temp:[15,22] },
+  { name: "Pigeon pea (arhar)", season:"kharif", duration:[5,6],
+    N:[15,25], P:[40,60], K:[20,40], pH:[5.5,7.5], Mg:[20,70], S:[8,20], rain:[600,1000], temp:[20,30] },
+  { name: "Sunflower", season:"zaid", duration:[3,3.5],
+    N:[60,90], P:[40,60], K:[40,60], pH:[6.0,7.5], Mg:[30,80], S:[15,30], rain:[500,750], temp:[18,27] },
+  { name: "Watermelon", season:"zaid", duration:[2.5,3],
+    N:[80,110], P:[40,60], K:[80,110], pH:[6.0,7.0], Mg:[30,80], S:[10,20], rain:[400,600], temp:[24,32] },
+  { name: "Green gram (moong)", season:"zaid", duration:[2,2.5],
+    N:[15,25], P:[30,50], K:[20,40], pH:[6.0,7.5], Mg:[20,70], S:[8,20], rain:[400,700], temp:[25,35] },
+];
+
+function scoreParam(value, range){
+  if (value === null || isNaN(value)) return null;
+  const [lo, hi] = range;
+  if (value >= lo && value <= hi) return 1;
+  const span = hi - lo || 1;
+  const dist = value < lo ? (lo - value) : (value - hi);
+  return Math.max(0, 1 - dist / span);
+}
+
+function evaluate(inputs, season){
+  const results = [];
+  for (const crop of CROPS){
+    if (season !== "any" && crop.season !== "any" && crop.season !== season) continue;
+    const checks = [
+      ["N", inputs.n, crop.N], ["P", inputs.p, crop.P], ["K", inputs.k, crop.K],
+      ["pH", inputs.ph, crop.pH], ["Mg", inputs.mg, crop.Mg], ["S", inputs.s, crop.S],
+      ["Rainfall", inputs.rain, crop.rain], ["Temperature", inputs.temp, crop.temp],
+    ];
+    let total = 0, count = 0;
+    const flags = [];
+    for (const [label, val, range] of checks){
+      const s = scoreParam(val, range);
+      if (s === null) continue;
+      total += s; count++;
+      if (s < 0.5) flags.push(label);
+    }
+    if (count === 0) continue;
+    results.push({ crop, fit: total / count, flags });
+  }
+  results.sort((a,b) => b.fit - a.fit);
+  return results.slice(0, 6);
+}
+
+let selectedSeason = "any";
+document.getElementById("seasonRow").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  document.querySelectorAll("#seasonRow button").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  selectedSeason = btn.dataset.season;
+});
+
+function num(id){
+  const v = document.getElementById(id).value;
+  return v === "" ? null : parseFloat(v);
+}
+
+document.getElementById("calcBtn").addEventListener("click", () => {
+  const inputs = {
+    n: num("n"), p: num("p"), k: num("k"), ph: num("ph"),
+    mg: num("mg"), s: num("s"), rain: num("rain"), temp: num("temp")
+  };
+  if (inputs.n === null || inputs.p === null || inputs.k === null || inputs.ph === null){
+    document.getElementById("errMsg").style.display = "inline";
+    return;
+  }
+  document.getElementById("errMsg").style.display = "none";
+
+  const results = evaluate(inputs, selectedSeason);
+  const list = document.getElementById("resultList");
+  list.innerHTML = "";
+
+  if (results.length === 0){
+    list.innerHTML = "<p>No close matches for that combination — try Any Season or double check the values.</p>";
+  } else {
+    results.forEach((r, i) => {
+      const pct = Math.round(r.fit * 100);
+      const durText = r.crop.duration[0] === r.crop.duration[1]
+        ? `${r.crop.duration[0]} mo` : `${r.crop.duration[0]}–${r.crop.duration[1]} mo`;
+      const el = document.createElement("div");
+      el.className = "result-row";
+      el.innerHTML = `
+        <div class="rank-num">${String(i+1).padStart(2,'0')}</div>
+        <div class="result-main">
+          <h3>${r.crop.name}</h3>
+          <div class="fit-track"><div class="fit-fill" style="width:${pct}%"></div></div>
+          <div class="meta">${pct}% match to your soil and climate readings</div>
+          ${r.flags.length ? `<div class="flags">Outside ideal range: ${r.flags.join(", ")}</div>` : ""}
+        </div>
+        <div class="dur-col"><span class="big">${durText}</span>to maturity</div>
+      `;
+      list.appendChild(el);
+    });
+  }
+  document.getElementById("results").style.display = "block";
+  document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+</script>
+
+</body>
+</html>
