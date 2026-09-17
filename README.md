@@ -47,7 +47,7 @@ The displayed percentage represents how closely the entered soil and climate val
 
 ## 🚀 Live Demo
 
-👉 [Open Soil-Based Crop Advisor](https://ak...github.io/soil-based-crop-advisor/)
+👉 👉 [Open Soil-Based Crop Advisor](https://akash22-opps.github.io/soil-based-crop-advisor/)
 ## 🔮 Future Improvements
 
 - Backend and database integration
